@@ -6,7 +6,7 @@ import org.springframework.data.repository.CrudRepository;
 
 import com.example.api.domain.Customer;
 
-public interface CustomerRepository extends CrudRepository<Customer, Long> {
+public interface CustomerRepository extends CrudRepository<Customer, Long>, CustomerRepositoryCustom {
 
 	List<Customer> findAllByOrderByNameAsc();
 
