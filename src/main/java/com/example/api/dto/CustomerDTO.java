@@ -15,6 +15,8 @@ import java.util.List;
 @AllArgsConstructor
 public class CustomerDTO {
 
+	private Long id;
+
 	@NotEmpty
 	private String name;
 

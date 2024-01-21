@@ -1,6 +1,7 @@
 package com.example.api.domain;
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -22,7 +23,7 @@ import java.util.List;
 public class Customer {
 
 	@Id
-	@GeneratedValue(strategy = GenerationType.AUTO)
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
 
 	@Column(nullable = false)
@@ -37,8 +38,8 @@ public class Customer {
 	@NotEmpty
 	private String gender;
 
-	@OneToMany(mappedBy = "customer", cascade = CascadeType.ALL, orphanRemoval = true)
-	@JsonBackReference
+	@OneToMany(mappedBy = "customer", cascade = CascadeType.ALL)
+	@JsonManagedReference
 	@EqualsAndHashCode.Exclude
 	@ToString.Exclude
 	private List<Address> addresses;

@@ -36,5 +36,11 @@ public class ResourceExceptionHandler {
 		
 		return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).body(err);
 	}
-	
+
+	@ExceptionHandler(RuntimeException.class)
+	public ResponseEntity<StandardError> runtime(RuntimeException e, HttpServletRequest request) {
+		StandardError err = new StandardError(System.currentTimeMillis(), HttpStatus.INTERNAL_SERVER_ERROR.value(), "Erro de execução", e.getMessage(), request.getRequestURI());
+
+		return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(err);
+	}
 }

@@ -1,9 +1,12 @@
 package com.example.api.service;
 
+import com.example.api.domain.Address;
 import com.example.api.domain.Customer;
+import com.example.api.dto.AddressClientDTO;
 import com.example.api.dto.CustomerDTO;
 import com.example.api.exceptions.DataIntegrityException;
 import com.example.api.exceptions.ObjectNotFoundException;
+import com.example.api.repository.AddressRepository;
 import com.example.api.repository.CustomerRepository;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
@@ -12,6 +15,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -20,6 +24,7 @@ import java.util.Optional;
 public class CustomerService {
 
 	private final CustomerRepository repository;
+	private final AddressRepository addressRepository;
 
 	public List<Customer> findAll() {
 		return repository.findAllByOrderByNameAsc();
@@ -51,6 +56,41 @@ public class CustomerService {
 		Customer customer = this.findById(customerId);
 		ModelMapper mapper = new ModelMapper();
 		mapper.map(dto, customer);
+
+		// Remove os endereços não presentes no DTO
+		List<Address> addressesToRemove = new ArrayList<>();
+		for (Address existingAddress : customer.getAddresses()) {
+			boolean addressExistsInDTO = dto.getAddresses().stream()
+					.anyMatch(addressDTO -> addressDTO.getId() != null && addressDTO.getId().equals(existingAddress.getId()));
+
+			if (!addressExistsInDTO) {
+				addressesToRemove.add(existingAddress);
+			}
+		}
+
+		for (Address addressToRemove : addressesToRemove) {
+			customer.getAddresses().remove(addressToRemove);
+			// Remove a referência do cliente para evitar erro de 'a collection with cascade="all-delete-orphan" was no longer referenced'
+			addressToRemove.setCustomer(null);
+			addressRepository.delete(addressToRemove);
+		}
+
+		// Adiciona ou atualiza os endereços presentes no DTO
+		for (AddressClientDTO addressDTO : dto.getAddresses()) {
+			Address address;
+			if (addressDTO.getId() != null) {
+				// Atualiza um endereço existente
+				address = addressRepository.findById(addressDTO.getId())
+						.orElseThrow(() -> new ObjectNotFoundException("Endereço não encontrado: " + addressDTO.getId()));
+				mapper.map(addressDTO, address);
+			} else {
+				// Cria um novo endereço
+				address = mapper.map(addressDTO, Address.class);
+				address.setCustomer(customer);
+			}
+			customer.getAddresses().add(address);
+		}
+
 		return repository.save(customer);
 	}
 
